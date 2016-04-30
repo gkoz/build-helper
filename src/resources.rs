@@ -14,6 +14,40 @@ const MANIFEST_SUFFIX: &'static str = ".gresource.xml";
 const RESOURCE_SUFFIX: &'static str = ".gresource";
 const RUST_SUFFIX: &'static str = "_resources.rs";
 
+/// Compiles GLib resources and generates rust code for embedding them.
+///
+/// Requires `glib-compile-resources` utility usually distributed with
+/// `glib-2.0` development files. The generated code requires explicit
+/// dependencies on `glib` and `gio` in `Cargo.toml`.
+///
+/// Assuming the resource manifest is named `myapp.gresource.xml`, put
+/// this code in the build script:
+///
+/// ```no_run
+/// extern crate build_helper;
+/// use std::process;
+///
+/// fn main() {
+///     if let Err(error) = build_helper::resources::compile("myapp") {
+///         println!("{}", error);
+///         process::exit(1);
+///     }
+/// }
+/// ```
+///
+/// In the application code include the generated file like this:
+///
+/// ```ignore
+/// mod resources {
+///     include!(concat!(env!("OUT_DIR"), "/myapp_resources.rs"));
+/// }
+/// ```
+///
+/// and register the resources before using them like this:
+///
+/// ```ignore
+/// resources::register();
+/// ```
 pub fn compile(name: &str) -> Result<(), Box<Error>> {
     let manifest_name = format!("{}{}", name, MANIFEST_SUFFIX);
     try!(check_inputs(&manifest_name).map_err(|e| {
@@ -92,11 +126,13 @@ fn codegen(out_dir: &str, name: &str) -> Result<(), Box<Error>> {
     try!(write!(rust, r#"/// Registers the embedded resources.
 ///
 /// You can include it in your code like this:
+///
 /// ```ignore
 /// mod resources {{
 ///     include!(concat!(env!("OUT_DIR"), "/exampleapp_resources.rs"));
 /// }}
 /// ```
+///
 /// and then call `resources::register()`.
 ///
 /// Requires explicit dependencies on `glib` and `gio` in `Cargo.toml`.

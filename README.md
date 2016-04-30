@@ -1,6 +1,7 @@
 # build-helper
 
-A build library for embedding GTK resources. Requires `glib-compile-resources`.
+A build library for embedding GTK resources. Requires `glib-compile-resources`
+utility.
 
 `Cargo.toml`:
 
